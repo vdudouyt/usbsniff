@@ -27,6 +27,7 @@ libusb_device *find_usb_device(libusb_context *ctx, unsigned int vid, unsigned i
 }
 
 unsigned char bus_number, device_number;
+char errbuf[PCAP_ERRBUF_SIZE];
 void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
 	char hex[1024];
 //	buf_to_hex(packet, header->len, &hex);
@@ -35,18 +36,31 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 	pcap_usb_header *usb_header = packet;
 	if(usb_header->device_address != device_number)
 		return;
-	printf("device_address=%d endpoint_number=%x, len=%d urb_len=%d data_len=%d\n",
+	printf("device_address=%d endpoint_number=%x, len=%d urb_len=%d data_len=%d bmRequestType=%d\n",
 			usb_header->device_address,
 			usb_header->endpoint_number,
 			header->len,
 			usb_header->urb_len,
-			usb_header->data_len);
+			usb_header->data_len,
+			usb_header->setup.bmRequestType);
 	if(usb_header->data_len) {
 		unsigned char *raw_data = packet + header->len - usb_header->data_len;
 		buf_to_hex(raw_data, usb_header->data_len, hex);
 		printf("hex: %s\n", hex);
 	}
 	#endif
+}
+
+void pcap_list_devices() {
+	pcap_if_t *alldevs, *d;
+	int result = pcap_findalldevs(&alldevs, errbuf);
+	assert(result != -1);
+	// Print the list
+	for(d= alldevs; d != NULL; d= d->next)
+	{
+		printf("%s\n", d->name);
+	}
+	pcap_freealldevs(alldevs);
 }
 
 int main(int argc, char *argv[])
@@ -79,15 +93,6 @@ int main(int argc, char *argv[])
 		#error "Unsupported platform"
 	#endif
 
-	char errbuf[PCAP_ERRBUF_SIZE];
-	pcap_if_t *alldevs, *d;
-	result = pcap_findalldevs(&alldevs, errbuf);
-	// Print the list
-	for(d= alldevs; d != NULL; d= d->next)
-	{
-		printf("%s\n", d->name);
-	}
-	pcap_freealldevs(alldevs);
 	printf("pcap device: %s\n", pcap_if_name);
 	pcap_t *handle = pcap_open_live(pcap_if_name, BUFSIZ, 1, 1000, errbuf);
 	if (handle == NULL) {
