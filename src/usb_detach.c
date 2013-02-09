@@ -32,18 +32,17 @@ void usb_init(unsigned int vid, unsigned int pid) {
 	}
 }
 
-void print_help_and_exit() {
+void print_help_and_exit(char **argv) {
+	fprintf(stderr, "Usage: %s <vid>:<pid>\n", argv[0]);
 	exit(-1);
 }
 
 int main(int argc, char **argv) {
-	if(argc != 3)
-		print_help_and_exit();
-	int success, vid, pid;
-	success = sscanf(argv[1], "%x", &vid);
-	assert(success);
-	success = sscanf(argv[2], "%x", &pid);
-	assert(success);
+	if(argc != 2)
+		print_help_and_exit(argv);
+	int result, vid, pid;
+	result = sscanf(argv[1], "%x:%x", &vid, &pid);
+	assert(result);
 	usb_init(vid, pid);
 	libusb_close(dev_handle);
 }

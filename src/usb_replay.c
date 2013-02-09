@@ -50,7 +50,7 @@ void usb_init(unsigned int vid, unsigned int pid) {
 }
 
 void print_help_and_exit(char **argv) {
-	fprintf(stderr, "Usage: %s <filename> <vid> <pid>\n", argv[0]);
+	fprintf(stderr, "Usage: %s <vid>:<pid> <filename>\n", argv[0]);
 	exit(-1);
 }
 
@@ -94,13 +94,10 @@ int read_urb(char *line, urb_t *out) {
 }
 
 int main(int argc, char **argv) {
-	if(argc != 4)
+	if(argc != 3)
 		print_help_and_exit(argv);
-	int success, vid, pid;
-	success = sscanf(argv[2], "%x", &vid);
-	assert(success);
-	success = sscanf(argv[3], "%x", &pid);
-	assert(success);
+	int result, vid, pid;
+	result = sscanf(argv[1], "%x:%x", &vid, &pid);
 	usb_init(vid, pid);
 
 	char line[4115];

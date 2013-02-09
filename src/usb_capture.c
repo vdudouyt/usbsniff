@@ -7,7 +7,7 @@
 #include "common.h"
 
 void print_help_and_exit(char **argv) {
-	fprintf(stderr, "Usage: %s <filename> <vid> <pid>\n", argv[0]);
+	fprintf(stderr, "Usage: %s <vid>:<pid> [<filename>]\n", argv[0]);
 	exit(-1);
 }
 
@@ -66,12 +66,10 @@ void pcap_list_devices() {
 int main(int argc, char *argv[])
 {
 	// Parsing args
-	if(argc != 4)
+	if(argc < 2)
 		print_help_and_exit(argv);
 	int result, vid, pid;
-	result = sscanf(argv[2], "%x", &vid);
-	assert(result);
-	result = sscanf(argv[3], "%x", &pid);
+	result = sscanf(argv[1], "%x:%x", &vid, &pid);
 	assert(result);
 
 	// Dealing with libusb
@@ -97,6 +95,9 @@ int main(int argc, char *argv[])
 	pcap_t *handle = pcap_open_live(pcap_if_name, BUFSIZ, 1, 1000, errbuf);
 	if (handle == NULL) {
 		fprintf(stderr, "Couldn't open device %s: %s\n", pcap_if_name, errbuf);
+		#ifdef LINUX
+		fprintf(stderr, "Please check for modules list.\n");
+		#endif
 		return(2);
 	}
 	pcap_loop(handle, -1, process_packet, NULL);
