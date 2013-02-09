@@ -56,7 +56,8 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 		last_urb_id = last_request_type = 0;
 		return;
 	}
-	// Preparing a message
+
+	// Transfer type
 	char transfer_type[5], direction[4];
 	switch(usb_header->transfer_type) {
 		case URB_ISOCHRONOUS:
@@ -76,6 +77,16 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 		sprintf(direction, "IN");
 	else
 		sprintf(direction, "OUT");
+
+	// Tracking time
+	static long double time_diff, current_timestamp, prev_timestamp = 0;
+	current_timestamp = usb_header->ts_sec + usb_header->ts_usec / pow(10,6);
+	time_diff = prev_timestamp ? current_timestamp - prev_timestamp : 0;
+	prev_timestamp = current_timestamp;
+	char timestamp[19];
+	sprintf(timestamp, "%.16Lf", time_diff);
+
+	// Output
 	char prefix[19];
 	if(usb_header->data_len > sizeof(hex) / 2) {
 		fprintf(stderr, "# Large data block omitted\n");
@@ -87,7 +98,7 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 			usb_header->endpoint_number & 0x7F);
 		unsigned char *raw_data = packet + header->len - usb_header->data_len;
 		buf_to_hex(raw_data, usb_header->data_len, hex);
-		printf("%-14s %s\n", prefix, hex);
+		printf("%-14s %s # %s\n", prefix, hex, timestamp);
 	}
 	#endif
 }
