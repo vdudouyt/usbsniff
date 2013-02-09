@@ -58,9 +58,37 @@ int trim_whitespace(char *str) {
 }
 
 int read_urb(char *line, urb_t *out) {
-	char str_out[] = "OUT:";
-	char str_in[] = "IN:";
+	int i;
 	memset(out, 0, sizeof(urb_t));
+	while(isspace(line[0]))	line++; // Strip the leading spaces
+	// Ignore if it starts with comment sign
+	if(line[0] == '#')
+		return(1);
+	// Ensure that it's enough long for safe operation
+	if(strlen(line) < 14)
+		return(0);
+
+	// Reading the URB transfer type
+	char transfer_type[5];
+	strncpy(transfer_type, line, 4);
+	transfer_type[4] = '\0';
+	if(!strcmp(transfer_type, "ISOC")) {
+		out->type = ISOCHRONOUS;
+	} else if(!strcmp(transfer_type, "INTR")) {
+		out->type = INTERRUPT;
+	} else if(!strcmp(transfer_type, "CTRL")) {
+		out->type = CONTROL;
+	} else if(!strcmp(transfer_type, "BULK")) {
+		out->type = BULK;
+	} else {
+		return(0);
+	}
+	line += strlen(transfer_type); // Mark as read
+	line++; // Trailing underscore
+
+	// Reading the direction
+	char str_out[] = "OUT";
+	char str_in[] = "IN";
 	if(!memcmp(line, str_out, strlen(str_out))) {
 		out->direction = OUT;
 		line += strlen(str_out);
@@ -70,19 +98,27 @@ int read_urb(char *line, urb_t *out) {
 	} else {
 		return(0); // Fail
 	}
+
+	// Reading the endpoint
+	int device_address, endpoint_number;
+	if(!sscanf(line, "(%d.%d):", &device_address, &endpoint_number))
+		return 0;
+	if (!(line = strchr(line, ':')))
+		return 0;
+	line++; // Trailing colon
+	while(isspace(line[0]))	line++; // Strip the leading spaces
+
+	// Read the timing (secs since previous URB) if specified
 	char *comment = strchr(line, '#'); // Does line contains the sharp sign?
 	if(comment) {
 		comment[0] = '\0'; // Split from line
 		comment++;
-		// Strip leading whitespace
-		while(comment[0] && isspace(comment[0]))
-			comment++;
-			int r = sscanf(comment, "%Lf", &(out->timing));
-			assert(r);
+		while(isspace(comment[0])) comment++; // Strip the leading spaces
+			if(!sscanf(comment, "%Lf", &(out->timing)))
+				return 0;
 	}
 	trim_whitespace(line);
 	assert(strlen(line) % 2 == 0); // Total nibbles count should be even
-	out->type = BULK; // The only one that's currently supported
 	out->data_size = hex_to_buf(line, out->data);
 	out->initialized = 1;
 	return(1);
@@ -97,7 +133,7 @@ int main(int argc, char **argv) {
 
 	char line[4115];
 	int r, actual;
-	FILE *file = fopen ( argv[1], "r" );
+	FILE *file = fopen ( argv[2], "r" );
 	assert(file);
 	urb_t previous, current;
 	memset(&previous, 0, sizeof(urb_t));
@@ -105,7 +141,11 @@ int main(int argc, char **argv) {
 	do {
 		read_success = fgets ( line, sizeof line, file ); // Reading line-by-line
 		memset(&current, 0, sizeof(urb_t));
-		read_urb(line, &current);
+		int result = read_urb(line, &current);
+		if(!result) {
+			fprintf(stderr, "Failed while parsing line: %s\n", line);
+			continue;
+		}
 		if(previous.initialized) {
 			assert(previous.type == BULK); // The only one that's currently supported
 			if(current.timing) {

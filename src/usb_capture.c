@@ -44,7 +44,7 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 		// when we start a data capture.
 		// I don't think that we are insterested in it's contents,
 		// so just display a message.
-		fprintf(stderr, "# GET DESCRIPTOR Request DEVICE\n");
+		printf("# GET DESCRIPTOR Request DEVICE\n");
 		// Mark as awaiting response
 		last_urb_id = usb_header->id;
 		last_request_type = usb_header->setup.bmRequestType;
@@ -52,13 +52,12 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 	}
 	if(last_urb_id && last_request_type == 128) {
 		// We do not need it's response as well
-		fprintf(stderr, "# GET DESCRIPTOR Response DEVICE\n");
+		printf("# GET DESCRIPTOR Response DEVICE\n");
 		last_urb_id = last_request_type = 0;
 		return;
 	}
 	// Preparing a message
-	char direction = usb_header->endpoint_number & URB_TRANSFER_IN ? 'I' : 'O';
-	char transfer_type[5];
+	char transfer_type[5], direction[4];
 	switch(usb_header->transfer_type) {
 		case URB_ISOCHRONOUS:
 			sprintf(transfer_type, "ISOC");
@@ -73,17 +72,22 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 			sprintf(transfer_type, "BULK");
 			break;
 	}
+	if( usb_header->endpoint_number & URB_TRANSFER_IN )
+		sprintf(direction, "IN");
+	else
+		sprintf(direction, "OUT");
+	char prefix[19];
 	if(usb_header->data_len > sizeof(hex) / 2) {
 		fprintf(stderr, "# Large data block omitted\n");
 	} else if(usb_header->data_len) {
-		fprintf(stderr, "%s_%c(%d.%d): ",
+		sprintf(prefix, "%s_%s(%d.%d):",
 			transfer_type,
 			direction,
 			0, // avoid redundancy
 			usb_header->endpoint_number & 0x7F);
 		unsigned char *raw_data = packet + header->len - usb_header->data_len;
 		buf_to_hex(raw_data, usb_header->data_len, hex);
-		printf("%s\n", hex);
+		printf("%-14s %s\n", prefix, hex);
 	}
 	#endif
 }
