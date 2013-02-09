@@ -29,7 +29,7 @@ libusb_device *find_usb_device(libusb_context *ctx, unsigned int vid, unsigned i
 unsigned char bus_number, device_number;
 char errbuf[PCAP_ERRBUF_SIZE];
 void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
-	char hex[1024];
+	char hex[8192];
 //	buf_to_hex(packet, header->len, &hex);
 //	printf("Packet data: %s\n", hex);
 	#ifdef LINUX
@@ -100,5 +100,6 @@ int main(int argc, char *argv[])
 		return(2);
 	}
 	pcap_loop(handle, -1, process_packet, NULL);
+	printf("exit\n");
 	pcap_close(handle);
 }
