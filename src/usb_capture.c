@@ -4,6 +4,7 @@
 #include <pcap/usb.h>
 #include <libusb.h>
 #include <assert.h>
+#include <math.h>
 #include "common.h"
 
 void print_help_and_exit(char **argv) {
@@ -44,7 +45,7 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 //	buf_to_hex(packet, header->len, &hex);
 //	printf("Packet data: %s\n", hex);
 	#ifdef LINUX
-	pcap_usb_header *usb_header = packet;
+	pcap_usb_header *usb_header = (pcap_usb_header *) packet;
 	if(usb_header->device_address != device_number)
 		return;
 	// TODO: have a hash table here?
@@ -100,7 +101,7 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 			direction,
 			0, // avoid redundancy
 			usb_header->endpoint_number & 0x7F);
-		unsigned char *raw_data = packet + header->len - usb_header->data_len;
+		const unsigned char *raw_data = packet + header->len - usb_header->data_len;
 		buf_to_hex(raw_data, usb_header->data_len, hex);
 		long double time_diff = track_time(usb_header->ts_sec, usb_header->ts_usec);
 		char timestamp[19];
