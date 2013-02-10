@@ -38,6 +38,7 @@ long double track_time(int64_t ts_sec, int32_t ts_usec) {
 
 unsigned char bus_number, device_number;
 char errbuf[PCAP_ERRBUF_SIZE];
+FILE *out;
 void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
 	char hex[8192];
 //	buf_to_hex(packet, header->len, &hex);
@@ -104,7 +105,10 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 		long double time_diff = track_time(usb_header->ts_sec, usb_header->ts_usec);
 		char timestamp[19];
 		sprintf(timestamp, "%.16Lf", time_diff);
-		printf("%-14s %s # %s\n", prefix, hex, timestamp);
+		char format[] = "%-14s %s # %s\n";
+		printf(format, prefix, hex, timestamp);
+		if(out)
+			fprintf(out, format, prefix, hex, timestamp);
 	}
 	#endif
 }
@@ -124,11 +128,22 @@ void pcap_list_devices() {
 int main(int argc, char *argv[])
 {
 	// Parsing args
-	if(argc < 2)
+	if(argc < 2 || argc > 3)
 		print_help_and_exit(argv);
 	int result, vid, pid;
 	result = sscanf(argv[1], "%x:%x", &vid, &pid);
-	assert(result);
+	if(!result)
+		print_help_and_exit(argv);
+	out = NULL;
+	if(argc > 2) {
+		// Opening log file
+		out = fopen ( argv[2], "w" );
+		if(!out) {
+			perror("Couldn't open log");
+			exit(-1);
+		}
+		setvbuf(out, NULL, _IONBF, 0);
+	}
 
 	// Dealing with libusb
 	libusb_device_handle *dev_handle;
@@ -161,4 +176,6 @@ int main(int argc, char *argv[])
 	pcap_loop(handle, -1, process_packet, NULL);
 	printf("exit\n");
 	pcap_close(handle);
+	if(out)
+		fclose(out);
 }
