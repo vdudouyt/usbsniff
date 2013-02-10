@@ -21,6 +21,8 @@ typedef struct urb_s {
 		OUT,
 		IN,
 	} direction;
+	unsigned int device_address;
+	unsigned int endpoint;
 	unsigned char data[2056];
 	int data_size;
 	long double timing; // secs since the previous URB
@@ -100,8 +102,7 @@ int read_urb(char *line, urb_t *out) {
 	}
 
 	// Reading the endpoint
-	int device_address, endpoint_number;
-	if(!sscanf(line, "(%d.%d):", &device_address, &endpoint_number))
+	if(!sscanf(line, "(%d.%d):", &(out->device_address), &(out->endpoint)))
 		return 0;
 	if (!(line = strchr(line, ':')))
 		return 0;
