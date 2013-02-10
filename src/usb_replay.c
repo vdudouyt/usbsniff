@@ -135,48 +135,44 @@ int main(int argc, char **argv) {
 	int r, actual;
 	FILE *file = fopen ( argv[2], "r" );
 	assert(file);
-	urb_t previous, current;
-	memset(&previous, 0, sizeof(urb_t));
-	char *read_success = NULL;
-	do {
-		read_success = fgets ( line, sizeof line, file ); // Reading line-by-line
+	urb_t current;
+	memset(&current, 0, sizeof(urb_t));
+	while(fgets ( line, sizeof line, file )) { // Reading line-by-line
 		memset(&current, 0, sizeof(urb_t));
 		int result = read_urb(line, &current);
 		if(!result) {
 			fprintf(stderr, "Failed while parsing line: %s\n", line);
 			continue;
 		}
-		if(previous.initialized) {
-			assert(previous.type == BULK); // The only one that's currently supported
-			if(current.timing) {
-				int time = current.timing*pow(10,6);
-				usleep(time);
-			}
-			switch(previous.direction) {
-				case OUT:
-					printf("out length: %d\n", previous.data_size);
-					r = libusb_bulk_transfer(dev_handle,
-						(2 | LIBUSB_ENDPOINT_OUT),
-						previous.data,
-						previous.data_size,
-						&actual,
-						0);
-					assert(r == 0);
-					break;
-				case IN:
-					r = libusb_bulk_transfer(dev_handle,
-						(1 | LIBUSB_ENDPOINT_IN),
-						previous.data,
-						previous.data_size,
-						&actual,
-						0);
-					assert(r == 0);
-					break;
-			}
+		if(!current.initialized)
+			continue;
+		assert(current.type == BULK); // The only one that's currently supported
+		if(current.timing) {
+			int time = current.timing*pow(10,6);
+			usleep(time);
 		}
-		// Send on the next iteration
-		memcpy(&previous, &current, sizeof(urb_t));
-	} while ( read_success );
+		switch(current.direction) {
+			case OUT:
+				printf("out length: %d\n", current.data_size);
+				r = libusb_bulk_transfer(dev_handle,
+						(2 | LIBUSB_ENDPOINT_OUT),
+						current.data,
+						current.data_size,
+						&actual,
+						0);
+				assert(r == 0);
+				break;
+			case IN:
+				r = libusb_bulk_transfer(dev_handle,
+						(1 | LIBUSB_ENDPOINT_IN),
+						current.data,
+						current.data_size,
+						&actual,
+						0);
+				assert(r == 0);
+				break;
+		}
+	}
 
 	libusb_close(dev_handle);
 }

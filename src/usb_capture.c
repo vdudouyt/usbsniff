@@ -26,6 +26,16 @@ libusb_device *find_usb_device(libusb_context *ctx, unsigned int vid, unsigned i
 	return(NULL); // default
 }
 
+long double track_time(int64_t ts_sec, int32_t ts_usec) {
+	// Args: absolute timestamp (sec + usec)
+	// Returns: relative timestamp
+	static long double time_diff, current_timestamp, prev_timestamp = 0;
+	current_timestamp = ts_sec + ts_usec / pow(10,6);
+	time_diff = prev_timestamp ? current_timestamp - prev_timestamp : 0;
+	prev_timestamp = current_timestamp;
+	return(time_diff);
+}
+
 unsigned char bus_number, device_number;
 char errbuf[PCAP_ERRBUF_SIZE];
 void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
@@ -78,13 +88,6 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 	else
 		sprintf(direction, "OUT");
 
-	// Tracking time
-	static long double time_diff, current_timestamp, prev_timestamp = 0;
-	current_timestamp = usb_header->ts_sec + usb_header->ts_usec / pow(10,6);
-	time_diff = prev_timestamp ? current_timestamp - prev_timestamp : 0;
-	prev_timestamp = current_timestamp;
-	char timestamp[19];
-	sprintf(timestamp, "%.16Lf", time_diff);
 
 	// Output
 	char prefix[19];
@@ -98,6 +101,9 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 			usb_header->endpoint_number & 0x7F);
 		unsigned char *raw_data = packet + header->len - usb_header->data_len;
 		buf_to_hex(raw_data, usb_header->data_len, hex);
+		long double time_diff = track_time(usb_header->ts_sec, usb_header->ts_usec);
+		char timestamp[19];
+		sprintf(timestamp, "%.16Lf", time_diff);
 		printf("%-14s %s # %s\n", prefix, hex, timestamp);
 	}
 	#endif
