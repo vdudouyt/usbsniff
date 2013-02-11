@@ -44,6 +44,11 @@ void usb_init(unsigned int vid, unsigned int pid) {
 	assert(dev_handle);
 
 	libusb_free_device_list(devs, 1); //free the list, unref the devices in it
+
+	if(libusb_kernel_driver_active(dev_handle, 0) == 1) { //find out if kernel driver is attached
+		int r = libusb_detach_kernel_driver(dev_handle, 0);
+		assert(r == 0);
+	}
 }
 
 void print_help_and_exit(char **argv) {
@@ -137,7 +142,6 @@ int main(int argc, char **argv) {
 	FILE *file = fopen ( argv[2], "r" );
 	assert(file);
 	urb_t current;
-	memset(&current, 0, sizeof(urb_t));
 	while(fgets ( line, sizeof line, file )) { // Reading line-by-line
 		memset(&current, 0, sizeof(urb_t));
 		int result = read_urb(line, &current);
