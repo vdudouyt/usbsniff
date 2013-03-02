@@ -94,7 +94,8 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 	// Output
 	char prefix[19];
 	if(usb_header->data_len > sizeof(hex) / 2) {
-		fprintf(stderr, "# Large data block omitted\n");
+		printf("# Large data block omitted\n");
+		fprintf(out, "# Large data block omitted\n");
 	} else if(usb_header->data_len) {
 		sprintf(prefix, "%s_%s(%d.%d):",
 			transfer_type,
