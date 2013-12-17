@@ -1,7 +1,7 @@
 .PHONY: all clean install
 EXECUTABLES=usb_capture
 OBJECTS=common.o
-PROGS=usb_capture usb_detach usb_replay
+PROGS=usb_capture usb_detach usb_replay usb_reset
 CFLAGS = `pkg-config --cflags libusb-1.0` -g -O0 -DLINUX
 LIBS = `pkg-config --libs libusb-1.0` -lpcap
 
