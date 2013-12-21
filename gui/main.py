@@ -1,7 +1,10 @@
 import pygtk
 pygtk.require('2.0')
-import gtk, os
+import gtk, os, subprocess
 import operator
+import regex2parser
+
+LSUsbParser = regex2parser.create_parser('LSUsbResult', 'ID (\w+):(\w+) (.*)', ['vid', 'pid', 'name'])
 
 class UsbSniff:
 	def __init__(self):
@@ -37,7 +40,9 @@ class UsbSniff:
 
 		# Toolbar
 		self.device_selector = gtk.combo_box_new_text()
-		self.device_selector.append_text("093a:2510 Pixart Imaging, Inc. Optical Mouse")
+		for dev in LSUsbParser.parse(subprocess.check_output("lsusb")):
+			self.device_selector.append_text("%s:%s %s" % (dev.vid, dev.pid, dev.name))
+		self.device_selector.set_active(0)
 		self.toolbar = gtk.Toolbar()
 		self.toolbar_hbox = gtk.HBox()
 		self.toolbar_hbox.pack_start(gtk.ToolButton(gtk.STOCK_MEDIA_RECORD), True, False, 0)
