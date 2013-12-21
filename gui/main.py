@@ -36,8 +36,14 @@ class UsbSniff:
 		menubar.show()
 
 		# Toolbar
+		self.device_selector = gtk.combo_box_new_text()
+		self.device_selector.append_text("093a:2510 Pixart Imaging, Inc. Optical Mouse")
 		self.toolbar = gtk.Toolbar()
-		self.toolbar.append_item("test", "test", "test", None, None)
+		self.toolbar_hbox = gtk.HBox()
+		self.toolbar_hbox.pack_start(gtk.ToolButton(gtk.STOCK_MEDIA_RECORD), True, False, 0)
+		self.toolbar_hbox.pack_start(gtk.ToolButton(gtk.STOCK_MEDIA_PLAY), True, False, 0)
+		self.toolbar_hbox.pack_end(self.device_selector, True, False, 0)
+		self.toolbar.add(self.toolbar_hbox)
 
 		# TreeView
 		self.liststore = gtk.ListStore(int, *[str] * 4)
