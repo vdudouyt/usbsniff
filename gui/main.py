@@ -6,6 +6,10 @@ import regex2parser
 
 LSUsbParser = regex2parser.create_parser('LSUsbResult', 'ID (\w+):(\w+) (.*)', ['vid', 'pid', 'name'])
 
+FileParser = regex2parser.create_parser('FileParserResult',
+	'^(BULK|CTRL|INTR|ISOC)_(IN|OUT)\(([0-9.]+)\):\s*([0-9a-f]+)',
+	['type', 'direction', 'endpoint', 'data'])
+
 class UsbSniff:
 	def __init__(self):
 		# Main Menu
@@ -30,7 +34,7 @@ class UsbSniff:
 
 		get_children = operator.methodcaller('get_children')
 		for child in reduce(operator.add, map (get_children, [menu_file, menu_capture, menu_view]), []):
-			child.connect("activate", self.menuitem_response)
+			child.connect("activate", self.on_menuitem_activated)
 
 		menubar = gtk.MenuBar()
 		menubar.append(item_file)
@@ -54,8 +58,6 @@ class UsbSniff:
 		self.liststore = gtk.ListStore(int, *[str] * 4)
 		self.treeview = gtk.TreeView(self.liststore)
 		self.treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
-		self.liststore.append([1, "BULK_OUT", "0.1", "1111", "Test write"])
-		self.liststore.append([2, "BULK_IN", "0.1", "1111", "Test read"])
 		for (index, column) in enumerate(['#'] + [''] * 4):
 			tvcolumn = gtk.TreeViewColumn(column)
 			if index == 3: tvcolumn.set_expand(True)
@@ -78,8 +80,29 @@ class UsbSniff:
 	def main(self):
 		gtk.main()
 	
-	def menuitem_response(self, menuitem):
-		print menuitem
+	def load_file(self, filename):
+		content_file = open(filename, 'r')
+		self.liststore.clear()
+		for (index, row) in enumerate(filter(None, FileParser.parse(content_file.read()))):
+			self.liststore.append([index+1] + list(row))
+
+	# Events
+	
+	def on_menuitem_activated(self, menuitem):
+		# Route the request to a specific menu handler
+		isalpha = operator.methodcaller('isalpha')
+		normalized_label = filter(isalpha, menuitem.get_label()).lower()
+		getattr(self, 'on_menu_%s' % normalized_label)()
+
+	def on_menu_open(self):
+		dialog = gtk.FileChooserDialog("Open..",
+			None,
+			gtk.FILE_CHOOSER_ACTION_OPEN,
+			(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+			gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+		if dialog.run() == gtk.RESPONSE_OK:
+			self.load_file(dialog.get_filename())
+		dialog.destroy()
 
 if __name__ == "__main__":
 	usbsniff = UsbSniff()
