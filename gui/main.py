@@ -1,7 +1,6 @@
 import pygtk
 pygtk.require('2.0')
-import gtk, os, subprocess
-import operator
+import gtk, os, subprocess, operator, json
 import regex2parser
 
 LSUsbParser = regex2parser.create_parser('LSUsbResult', 'ID (\w+):(\w+) (.*)', ['vid', 'pid', 'name'])
@@ -11,7 +10,13 @@ FileParser = regex2parser.create_parser('FileParserResult',
 	['type', 'direction', 'endpoint', 'data'])
 
 class UsbSniff:
+	settings = {}
+	settings_dirname = "%s/.usbsniff" % os.environ['HOME']
+	settings_path = "%s/settings.json" % settings_dirname
+
 	def __init__(self):
+		self.load_settings()
+
 		# Main Menu
 		menu_file = gtk.Menu()
 		menu_file.append(gtk.MenuItem("_Open"))
@@ -68,7 +73,7 @@ class UsbSniff:
 
 		# Main Window & VBox
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-		self.window.connect("destroy", gtk.main_quit)
+		self.window.connect("destroy", self.destroy)
 		self.window.set_size_request(800, 600)
 		self.vbox = gtk.VBox()
 		self.vbox.pack_start(menubar, False, False, 0)
@@ -80,11 +85,27 @@ class UsbSniff:
 	def main(self):
 		gtk.main()
 	
+	def destroy(self, widget):
+		self.save_settings()
+		gtk.main_quit()
+	
 	def load_file(self, filename):
 		content_file = open(filename, 'r')
 		self.liststore.clear()
 		for (index, row) in enumerate(filter(None, FileParser.parse(content_file.read()))):
 			self.liststore.append([index+1] + list(row))
+	
+	def load_settings(self):
+		if not os.path.exists(self.settings_path):
+			self.save_settings()
+		with open(self.settings_path, 'r') as myFile:
+			self.settings = json.loads(myFile.read())
+
+	def save_settings(self):
+		if not os.path.isdir(self.settings_dirname):
+			os.mkdir(self.settings_dirname, 0777)
+		with open(self.settings_path, 'w') as myFile:
+			myFile.write(json.dumps(self.settings))
 
 	# Events
 	
