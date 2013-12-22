@@ -48,16 +48,27 @@ class UsbSniff:
 		menubar.show()
 
 		# Toolbar
+		self.devices = []
 		self.device_selector = gtk.combo_box_new_text()
 		for dev in LSUsbParser.parse(subprocess.check_output("lsusb")):
+			self.devices.append(dev)
 			self.device_selector.append_text("%s:%s %s" % (dev.vid, dev.pid, dev.name))
 		self.device_selector.set_active(0)
+		self.device_selector.connect('changed', self.on_device_selector_changed)
+
 		self.toolbar = gtk.Toolbar()
 		self.toolbar_hbox = gtk.HBox()
 		self.toolbar_hbox.pack_start(gtk.ToolButton(gtk.STOCK_MEDIA_RECORD), True, False, 0)
 		self.toolbar_hbox.pack_start(gtk.ToolButton(gtk.STOCK_MEDIA_PLAY), True, False, 0)
 		self.toolbar_hbox.pack_end(self.device_selector, True, False, 0)
 		self.toolbar.add(self.toolbar_hbox)
+
+		# Trying to preselect device by using last vid / pid that was saved in settings
+		if 'vid' in self.settings:
+			settings = self.settings
+			candidates = filter(lambda t: (t.vid, t.pid) == (settings['vid'], settings['pid']), self.devices)
+			pos = self.devices.index(candidates[0]) if len(candidates) else None
+			if pos > 0: self.device_selector.set_active(pos)
 
 		# TreeView
 		self.liststore = gtk.ListStore(int, *[str] * 4)
@@ -124,6 +135,11 @@ class UsbSniff:
 		if dialog.run() == gtk.RESPONSE_OK:
 			self.load_file(dialog.get_filename())
 		dialog.destroy()
+	
+	def on_device_selector_changed(self, widget):
+		device = self.devices[widget.get_active()]
+		settings = self.settings
+		(settings['vid'], settings['pid']) = (device.vid, device.pid)
 
 if __name__ == "__main__":
 	usbsniff = UsbSniff()
