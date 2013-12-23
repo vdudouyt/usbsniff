@@ -77,7 +77,9 @@ class UsbSniff:
 		self.treeview.connect('cursor-changed', self.on_cursor_changed)
 		for (index, column) in enumerate(['#', '', '', 'EP', '', '']):
 			tvcolumn = gtk.TreeViewColumn(column)
-			if index == 4: tvcolumn.set_expand(True)
+			if index == 4:
+				tvcolumn.set_expand(True)
+				tvcolumn.set_max_width(300)
 			cell = gtk.CellRendererText()
 			tvcolumn.pack_start(cell, True)
 			tvcolumn.set_attributes(cell, text=index)
