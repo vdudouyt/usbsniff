@@ -1,7 +1,7 @@
 import pygtk
 pygtk.require('2.0')
-import gtk, os, subprocess, operator, json
-import regex2parser
+import gtk, os, subprocess, operator, json, itertools
+import regex2parser, hexeditor
 
 LSUsbParser = regex2parser.create_parser('LSUsbResult', 'ID (\w+):(\w+) (.*)', ['vid', 'pid', 'name'])
 
@@ -74,6 +74,7 @@ class UsbSniff:
 		self.liststore = gtk.ListStore(int, *[str] * 4)
 		self.treeview = gtk.TreeView(self.liststore)
 		self.treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+		self.treeview.connect('cursor-changed', self.on_cursor_changed)
 		for (index, column) in enumerate(['#', '', '', 'EP', '', '']):
 			tvcolumn = gtk.TreeViewColumn(column)
 			if index == 4: tvcolumn.set_expand(True)
@@ -82,6 +83,13 @@ class UsbSniff:
 			tvcolumn.set_attributes(cell, text=index)
 			self.treeview.append_column(tvcolumn)
 
+		self.hexeditor = hexeditor.HexEditor()
+
+		self.paned = gtk.VPaned()
+		self.paned.pack1(self.treeview, resize=True)
+		self.paned.pack2(self.hexeditor)
+		self.paned.set_position(200)
+
 		# Main Window & VBox
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.window.connect("destroy", self.destroy)
@@ -89,7 +97,7 @@ class UsbSniff:
 		self.vbox = gtk.VBox()
 		self.vbox.pack_start(menubar, False, False, 0)
 		self.vbox.pack_start(self.toolbar, False, False, 0)
-		self.vbox.pack_end(self.treeview, True, True, 2)
+		self.vbox.pack_end(self.paned, True, True, 2)
 		self.window.add(self.vbox)
 		self.window.show_all()
 
@@ -102,8 +110,10 @@ class UsbSniff:
 	
 	def load_file(self, filename):
 		content_file = open(filename, 'r')
+		self.packets = []
 		self.liststore.clear()
 		for (index, row) in enumerate(filter(None, FileParser.parse(content_file.read()))):
+			self.packets.append(row)
 			self.liststore.append([index+1] + list(row))
 	
 	def load_settings(self):
@@ -140,6 +150,17 @@ class UsbSniff:
 		device = self.devices[widget.get_active()]
 		settings = self.settings
 		(settings['vid'], settings['pid']) = (device.vid, device.pid)
+	
+	def on_cursor_changed(self, treeview):
+		index = treeview.get_selection().get_selected_rows()[1][0][0]
+		self.hexeditor.set_buffer(hex_to_array(self.packets[index].data))
+
+def hex_to_array(str):
+	result = []
+	counter = itertools.count(0, 2)
+	for i in itertools.islice(counter, len(str)/2):
+		result.append(int(str[i:i+2], 16))
+	return(result)
 
 if __name__ == "__main__":
 	usbsniff = UsbSniff()
