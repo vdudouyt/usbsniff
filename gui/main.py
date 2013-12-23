@@ -82,12 +82,17 @@ class UsbSniff:
 			tvcolumn.pack_start(cell, True)
 			tvcolumn.set_attributes(cell, text=index)
 			self.treeview.append_column(tvcolumn)
+		self.treeview_scroller = gtk.ScrolledWindow()
+		self.treeview_scroller.add(self.treeview)
 
+		# HexEditor
 		self.hexeditor = hexeditor.HexEditor()
+		self.hexeditor_scroller = gtk.ScrolledWindow()
+		self.hexeditor_scroller.add(self.hexeditor)
 
 		self.paned = gtk.VPaned()
-		self.paned.pack1(self.treeview, resize=True)
-		self.paned.pack2(self.hexeditor)
+		self.paned.pack1(self.treeview_scroller, resize=True)
+		self.paned.pack2(self.hexeditor_scroller)
 		self.paned.set_position(200)
 
 		# Main Window & VBox
