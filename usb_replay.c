@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
 			case OUT:
 				printf("out length: %d\n", current.data_size);
 				r = libusb_bulk_transfer(dev_handle,
-						(2 | LIBUSB_ENDPOINT_OUT),
+						(current.endpoint | LIBUSB_ENDPOINT_OUT),
 						current.data,
 						current.data_size,
 						&actual,
@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
 				break;
 			case IN:
 				r = libusb_bulk_transfer(dev_handle,
-						(1 | LIBUSB_ENDPOINT_IN),
+						(current.endpoint | LIBUSB_ENDPOINT_IN),
 						current.data,
 						current.data_size,
 						&actual,
