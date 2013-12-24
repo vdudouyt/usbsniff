@@ -1,6 +1,6 @@
 import pygtk
 pygtk.require('2.0')
-import gtk, os, subprocess, operator, json, itertools
+import gtk, os, subprocess, operator, json, itertools, string
 import regex2parser, hexeditor
 
 LSUsbParser = regex2parser.create_parser('LSUsbResult', 'ID (\w+):(\w+) (.*)', ['vid', 'pid', 'name'])
@@ -13,6 +13,7 @@ class UsbSniff:
 	settings = {}
 	settings_dirname = "%s/.usbsniff" % os.environ['HOME']
 	settings_path = "%s/settings.json" % settings_dirname
+	menus = []
 
 	def __init__(self):
 		self.load_settings()
@@ -23,6 +24,7 @@ class UsbSniff:
 		menu_file.append(gtk.MenuItem("_Save"))
 		item_file = gtk.MenuItem("_File")
 		item_file.set_submenu(menu_file)
+		self.menus.append(menu_file)
 
 		menu_capture = gtk.Menu()
 		menu_capture.append(gtk.MenuItem("_Start"))
@@ -30,16 +32,14 @@ class UsbSniff:
 		menu_capture.append(gtk.MenuItem("_Reset device"))
 		item_capture = gtk.MenuItem("_Capture")
 		item_capture.set_submenu(menu_capture)
+		self.menus.append(menu_capture)
 
 		menu_view = gtk.Menu()
 		menu_view.append(gtk.MenuItem("Toolbar"))
 		menu_view.append(gtk.MenuItem("Hex"))
 		item_view = gtk.MenuItem("_View")
 		item_view.set_submenu(menu_view)
-
-		get_children = operator.methodcaller('get_children')
-		for child in reduce(operator.add, map (get_children, [menu_file, menu_capture, menu_view]), []):
-			child.connect("activate", self.on_menuitem_activated)
+		self.menus.append(menu_view)
 
 		menubar = gtk.MenuBar()
 		menubar.append(item_file)
@@ -71,10 +71,11 @@ class UsbSniff:
 			if pos > 0: self.device_selector.set_active(pos)
 
 		# TreeView
-		self.liststore = gtk.ListStore(int, *[str] * 4)
+		self.liststore = gtk.ListStore(*[str] * 5)
 		self.treeview = gtk.TreeView(self.liststore)
 		self.treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
 		self.treeview.connect('cursor-changed', self.on_cursor_changed)
+		self.treeview.connect('button-press-event', self.on_treeview_button_press_event)
 		for (index, column) in enumerate(['#', '', '', 'EP', '', '']):
 			tvcolumn = gtk.TreeViewColumn(column)
 			if index == 4:
@@ -86,6 +87,13 @@ class UsbSniff:
 			self.treeview.append_column(tvcolumn)
 		self.treeview_scroller = gtk.ScrolledWindow()
 		self.treeview_scroller.add(self.treeview)
+
+		# TreeView popup menu
+		self.treeview_popup_menu = gtk.Menu()
+		self.treeview_popup_menu.append(gtk.MenuItem("Mark as selection"));
+		self.treeview_popup_menu.append(gtk.MenuItem("Clear selection"));
+		self.treeview_popup_menu.show_all()
+		self.menus.append(self.treeview_popup_menu)
 
 		# HexEditor
 		self.hexeditor = hexeditor.HexEditor()
@@ -107,6 +115,13 @@ class UsbSniff:
 		self.vbox.pack_end(self.paned, True, True, 2)
 		self.window.add(self.vbox)
 		self.window.show_all()
+
+		# Connecting router to all menu items
+		get_children = operator.methodcaller('get_children')
+		for child in reduce(operator.add, map (get_children, self.menus), []):
+			child.connect("activate", self.on_menuitem_activated)
+
+		self.load_file('/home/minoru/git/usbsniff/log')
 
 	def main(self):
 		gtk.main()
@@ -134,14 +149,24 @@ class UsbSniff:
 			os.mkdir(self.settings_dirname, 0777)
 		with open(self.settings_path, 'w') as myFile:
 			myFile.write(json.dumps(self.settings))
+	
+	def enumerate_packets(self, selected_packets=[]):
+		for row in self.liststore:
+			row[0] = ''
+		counter = itertools.count(1)
+		for i, packet in enumerate(self.packets):
+			if (i, packet) in (selected_packets or [(i, packet)]):
+				self.liststore[i][0] = counter.next()
 
 	# Events
 	
 	def on_menuitem_activated(self, menuitem):
 		# Route the request to a specific menu handler
-		isalpha = operator.methodcaller('isalpha')
+		symbols = string.letters + ' '
+		isalpha = lambda t: t in symbols
 		normalized_label = filter(isalpha, menuitem.get_label()).lower()
-		getattr(self, 'on_menu_%s' % normalized_label)()
+		getattr(self, 'on_menu_%s' % normalized_label.replace(' ','_'))()
+		return True
 
 	def on_menu_open(self):
 		dialog = gtk.FileChooserDialog("Open..",
@@ -153,6 +178,15 @@ class UsbSniff:
 			self.load_file(dialog.get_filename())
 		dialog.destroy()
 	
+	def on_menu_mark_as_selection(self):
+		selection = self.treeview.get_selection().get_selected_rows()[1]
+		self.selected_packets = [ (row[0], self.packets[row[0]]) for row in selection ]
+		self.enumerate_packets(self.selected_packets)
+
+	def on_menu_clear_selection(self):
+		self.selected_packets = []
+		self.enumerate_packets()
+	
 	def on_device_selector_changed(self, widget):
 		device = self.devices[widget.get_active()]
 		settings = self.settings
@@ -161,6 +195,11 @@ class UsbSniff:
 	def on_cursor_changed(self, treeview):
 		index = treeview.get_selection().get_selected_rows()[1][0][0]
 		self.hexeditor.set_buffer(hex_to_array(self.packets[index].data))
+
+	def on_treeview_button_press_event(self, widget, event):
+		if event.button == 3:
+			self.treeview_popup_menu.popup( None, None, None, event.button, event.time)
+			return True
 
 def hex_to_array(str):
 	result = []
