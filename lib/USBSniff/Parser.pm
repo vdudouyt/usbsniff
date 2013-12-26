@@ -19,7 +19,7 @@ sub parse {
 		$line++;
 		my $cmt = $1 if s/#(.*)//;
 		s/\s*$//;
-		if($_ =~ /^(BULK|CTRL|INTR|ISOC)_(IN|OUT)\(([0-9.]+)\):\s*([0-9a-f]+)/) {
+		if($_ =~ /^(BULK|CTRL|INTR|ISOC)_(IN|OUT)\(0\.([0-9.]+)\):\s*([0-9a-f]+)/) {
 			die("Odd number of octets at $line") if length($4) % 2;
 			my $element = USBSniff::Parser::Element->new();
 			$element->set_comment($cmt);
