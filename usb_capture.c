@@ -162,6 +162,7 @@ int main(int argc, char *argv[])
 
 	char pcap_if_name[10];
 	#ifdef LINUX
+		system("modprobe usbmon");
 		sprintf(pcap_if_name, "usbmon%d", bus_number);
 	#else 
 		#error "Unsupported platform"
