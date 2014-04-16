@@ -7,6 +7,9 @@
 #include <math.h>
 #include "common.h"
 
+#define MAX_PACKET_SIZE 4096
+#define OUT(...) do { printf(__VA_ARGS__); if(out) { fprintf(out, __VA_ARGS__); } } while(0);
+
 void print_help_and_exit(char **argv) {
 	fprintf(stderr, "Usage: %s <vid>:<pid> [<filename>]\n", argv[0]);
 	exit(-1);
@@ -40,10 +43,8 @@ long double track_time(int64_t ts_sec, int32_t ts_usec) {
 unsigned char bus_number, device_number;
 char errbuf[PCAP_ERRBUF_SIZE];
 FILE *out;
+
 void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
-	char hex[8192];
-//	buf_to_hex(packet, header->len, &hex);
-//	printf("Packet data: %s\n", hex);
 	#ifdef LINUX
 	pcap_usb_header *usb_header = (pcap_usb_header *) packet;
 	if(usb_header->device_address != device_number)
@@ -92,26 +93,40 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 
 
 	// Output
-	char prefix[19];
-	if(usb_header->data_len > sizeof(hex) / 2) {
+	char prefix[19], hex[MAX_PACKET_SIZE * 2];
+	if(usb_header->data_len > MAX_PACKET_SIZE) {
 		printf("# Large data block omitted\n");
 		if(out)
 			fprintf(out, "# Large data block omitted\n");
 	} else if(usb_header->data_len) {
+		/* Printing transfer type & endpoint*/
 		sprintf(prefix, "%s_%s(%d.%d):",
 			transfer_type,
 			direction,
 			0, // avoid redundancy
 			usb_header->endpoint_number & 0x7F);
+		OUT("%-14s", prefix);
+
+		/* Printing packet's setup */
+		if(usb_header->transfer_type == URB_CONTROL) {
+			pcap_usb_setup *setup = &(usb_header->setup);
+			OUT("%02x:%02x:%04x:%04x:%04x:",
+					setup->bmRequestType,
+					setup->bRequest,
+					setup->wValue,
+					setup->wIndex,
+					setup->wLength);
+		}
+
+		/* Printing payload */
 		const unsigned char *raw_data = packet + header->len - usb_header->data_len;
+		void (*print_packet)(FILE *out, pcap_usb_header *usb_header, const unsigned char *raw_data);
 		buf_to_hex(raw_data, usb_header->data_len, hex);
+		OUT("%s", hex);
+
+		/* Printing timestamp */
 		long double time_diff = track_time(usb_header->ts_sec, usb_header->ts_usec);
-		char timestamp[19];
-		sprintf(timestamp, "%.16Lf", time_diff);
-		char format[] = "%-14s %s # %s\n";
-		printf(format, prefix, hex, timestamp);
-		if(out)
-			fprintf(out, format, prefix, hex, timestamp);
+		OUT(" # %.16Lf\n", time_diff);
 	}
 	#endif
 }
