@@ -26,7 +26,7 @@ usb_detach: usb_detach.c
 usb_replay: $(USB_REPLAY_OBJECTS) usb_replay.c
 	$(CC) $(CFLAGS) $(OBJECTS) $(USB_REPLAY_OBJECTS) usb_replay.c $(LIBS) -o usb_replay
 
-y.tab.c: usb_replay.y
+y.tab.c: usb_replay.y common.c usb_replay.c
 	bison -y -d usb_replay.y
 
 lex.yy.c: usb_replay.l
