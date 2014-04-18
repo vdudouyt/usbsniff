@@ -12,7 +12,7 @@ $ usb_detach 1234:4567
 $ usb_reset 1234:4567
 ```
 
-### Format
+### Output Format
 
 ```nohiglight
 # transfer_type:bmRequestType:bRequest:wValue:wIndex:wLength:data
