@@ -19,10 +19,17 @@ endpoint:       '(' FLOAT ')'
 timestamp:      '#' FLOAT
 non_ctrl:       BULK | INTR | ISOC
 
+bmRequestType:  HEX
+bRequest:       HEX
+wValue:         HEX
+wIndex:         HEX
+wLength:        HEX
+data:           HEX
+
 packet_body:
-        | CTRL '_' OUT endpoint ':' HEX ':' HEX ':' HEX ':' HEX ':' HEX ':' HEX
-        | CTRL '_' IN  endpoint ':' HEX
-        | non_ctrl '_' direction endpoint ':' HEX
+        | CTRL '_' OUT endpoint ':' bmRequestType ':' bRequest ':' wValue ':' wIndex ':' wLength ':' data
+        | CTRL '_' IN  endpoint ':' data
+        | non_ctrl '_' direction endpoint ':' data
         ;
 
 packet: packet_body
