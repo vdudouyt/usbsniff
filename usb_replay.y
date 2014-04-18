@@ -14,7 +14,7 @@
 %%
 
 document:
-    document packet '\n'    { }
+    document packet '\n'    { perform_transfer(yylval); }
     |
     ;
 

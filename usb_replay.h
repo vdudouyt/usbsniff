@@ -13,10 +13,10 @@ typedef struct urb_s {
 	long double timing; // secs since the previous URB
 
 	uint8_t bmRequestType;
-        uint8_t bRequest;
-        uint16_t wValue;
-        uint16_t wIndex;
-        uint16_t wLength;
+	uint8_t bRequest;
+	uint16_t wValue;
+	uint16_t wIndex;
+	uint16_t wLength;
 } urb_t;
 
 #endif

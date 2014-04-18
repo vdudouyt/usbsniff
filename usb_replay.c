@@ -5,28 +5,12 @@
 #include <assert.h>
 #include <libusb.h>
 #include "common.h"
+#include "usb_replay.h"
+#include "error.h"
+#include "y.tab.h"
 
 libusb_device_handle *dev_handle;
 libusb_context *ctx;
-
-typedef struct urb_s {
-	int initialized : 1; // set by read_urb on successful read
-	enum {
-		CONTROL,
-		INTERRUPT,
-		ISOCHRONOUS,
-		BULK,
-	} type;
-	enum {
-		OUT,
-		IN,
-	} direction;
-	unsigned int device_address;
-	unsigned int endpoint;
-	unsigned char data[2056];
-	int data_size;
-	long double timing; // secs since the previous URB
-} urb_t;
 
 void usb_init(unsigned int vid, unsigned int pid) {
 	libusb_device **devs;
@@ -54,4 +38,48 @@ void usb_init(unsigned int vid, unsigned int pid) {
 void print_help_and_exit(char **argv) {
 	fprintf(stderr, "Usage: %s <vid>:<pid> <filename>\n", argv[0]);
 	exit(-1);
+}
+
+void perform_transfer(urb_t *urb) {
+	printf("%02x:%02x:%02x:%02x:%02x\n", urb->bmRequestType, urb->bRequest, urb->wValue, urb->wIndex, urb->wLength);
+	int endpoint = urb->endpoint | (urb->direction == IN ? LIBUSB_ENDPOINT_IN : LIBUSB_ENDPOINT_OUT);
+
+	int r, bytes_transferred = 0;
+	if(urb->type == CTRL && urb->direction == OUT) {
+		r = libusb_control_transfer(dev_handle, 
+				urb->bmRequestType,
+				urb->bRequest,
+				urb->wValue,
+				urb->wIndex,
+				urb->data,
+				urb->wLength,
+				0);
+	} else if(urb->type == CTRL && urb->direction == IN) {
+		r = libusb_control_transfer(dev_handle, 
+				0,
+				0,
+				0,
+				0,
+				urb->data,
+				urb->data_size,
+				0);
+	} else if(urb->type == BULK) {
+		r = libusb_bulk_transfer(dev_handle,
+				endpoint,
+				urb->data,
+				urb->data_size,
+				&bytes_transferred,
+				0);
+	} else if(urb->type == INTR) {
+		r = libusb_intr_transfer(dev_handle,
+				endpoint,
+				urb->data,
+				urb->data_size,
+				&bytes_transferred,
+				0);
+	}
+
+	if(r != 0) {
+		ERROR2("Transfer failed: %s\n", libusb_error_name(r));
+	}
 }
