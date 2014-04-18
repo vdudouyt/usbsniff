@@ -22,8 +22,8 @@ usb_detach: usb_detach.c
 usb_replay: usb_replay.c
 	$(CC) $(CFLAGS) $(OBJECTS) usb_replay.c $(LIBS) -o usb_replay
 
-parser: usb_replay.l usb_replay.y
+parser: usb_replay.l usb_replay.y common.o
 	bison -y -d usb_replay.y
 	flex usb_replay.l
 	gcc -c y.tab.c lex.yy.c
-	gcc y.tab.o lex.yy.o -o parser -ll -ly
+	gcc y.tab.o lex.yy.o common.o -o parser -ll -ly
