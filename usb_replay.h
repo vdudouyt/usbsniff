@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 typedef struct urb_s {
-	unsigned char type;
-	unsigned char direction;
+	unsigned int type;
+	unsigned int direction;
 	unsigned int device_address;
 	unsigned int endpoint;
 	unsigned char data[2056];

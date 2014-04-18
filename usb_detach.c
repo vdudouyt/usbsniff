@@ -18,18 +18,12 @@ void usb_init(unsigned int vid, unsigned int pid) {
 	if(r < 0) return;
 
 	libusb_set_debug(ctx, 3);
-	cnt = libusb_get_device_list(ctx, &devs);
-	if(cnt < 0) return;
 
 	dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
 	assert(dev_handle);
 
-	libusb_free_device_list(devs, 1); //free the list, unref the devices in it
-
-	if(libusb_kernel_driver_active(dev_handle, 0) == 1) { //find out if kernel driver is attached
-		int r = libusb_detach_kernel_driver(dev_handle, 0);
-		assert(r == 0);
-	}
+	libusb_detach_kernel_driver(dev_handle, 0);
+	assert(r == 0);
 }
 
 void print_help_and_exit(char **argv) {

@@ -1,6 +1,7 @@
 %{
     #include <stdio.h>
     #include <stdlib.h>
+    #include <string.h>
     #include "usb_replay.h"
     #include "error.h"
     int yylex(void);
@@ -18,24 +19,37 @@ document:
     |
     ;
 
-direction: OUT | IN
+direction:
+    | OUT { yylval->direction = OUT; }
+    | IN { yylval->direction = IN; }
 
-endpoint:       '(' FLOAT ')'
+endpoint:       '('
+                FLOAT { sscanf(yytext, "%d.%d", &(yylval->device_address), &(yylval->endpoint)); }
+                ')' 
 timestamp:      '#' FLOAT
-non_ctrl:       BULK | INTR | ISOC
+non_ctrl:
+    | BULK { yylval->type = BULK; }
+    | INTR { yylval->type = INTR; }
+    | ISOC { yylval->type = ISOC; }
 
 bmRequestType:  HEX { yylval->bmRequestType = hex_to_int(yytext); }
 bRequest:       HEX { yylval->bRequest = hex_to_int(yytext); }
 wValue:     HEX { yylval->wValue = hex_to_int(yytext); }
 wIndex:     HEX { yylval->wIndex = hex_to_int(yytext); }
 wLength:    HEX { yylval->wLength = hex_to_int(yytext); }
-data:       HEX { hex_to_buf(yytext, yylval->data); }
+data:       HEX { hex_to_buf(yytext, yylval->data); yylval->data_size = strlen(yytext) / 2; }
 
 packet_body:
     | CTRL '_' OUT endpoint ':' bmRequestType ':' bRequest ':' wValue ':' wIndex ':' wLength ':' data
       {
+        yylval->type = CTRL;
+        yylval->direction = OUT;
       }
     | CTRL '_' IN  endpoint ':' data
+      {
+        yylval->type = CTRL;
+        yylval->direction = IN;
+      }
     | non_ctrl '_' direction endpoint ':' data
     ;
 
@@ -66,7 +80,7 @@ int main(int argc, char **argv) {
     if(!(yylval = malloc(sizeof(urb_t)))) {
         ERROR("Couldn't malloc");
     }
-    //usb_init(vid, pid);
+    usb_init(vid, pid);
 
     yyparse();
 
