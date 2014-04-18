@@ -1,6 +1,8 @@
 %{
     #include <stdio.h>
+    #include <stdlib.h>
     #include "usb_replay.h"
+    #include "error.h"
     int yylex(void);
     void yyerror(char *);
     extern char *yytext;
@@ -12,9 +14,9 @@
 %%
 
 document:
-        document packet '\n'    { }
-        |
-        ;
+    document packet '\n'    { }
+    |
+    ;
 
 direction: OUT | IN
 
@@ -24,22 +26,22 @@ non_ctrl:       BULK | INTR | ISOC
 
 bmRequestType:  HEX { hex_to_buf(yytext, yylval->bmRequestType); }
 bRequest:       HEX { hex_to_buf(yytext, yylval->bRequest); }
-wValue:         HEX { hex_to_buf(yytext, yylval->wValue); }
-wIndex:         HEX { hex_to_buf(yytext, yylval->wIndex); }
-wLength:        HEX { hex_to_buf(yytext, yylval->wLength); }
-data:           HEX { hex_to_buf(yytext, yylval->data); }
+wValue:     HEX { hex_to_buf(yytext, yylval->wValue); }
+wIndex:     HEX { hex_to_buf(yytext, yylval->wIndex); }
+wLength:    HEX { hex_to_buf(yytext, yylval->wLength); }
+data:       HEX { hex_to_buf(yytext, yylval->data); }
 
 packet_body:
-        | CTRL '_' OUT endpoint ':' bmRequestType ':' bRequest ':' wValue ':' wIndex ':' wLength ':' data
-          {
-          }
-        | CTRL '_' IN  endpoint ':' data
-        | non_ctrl '_' direction endpoint ':' data
-        ;
+    | CTRL '_' OUT endpoint ':' bmRequestType ':' bRequest ':' wValue ':' wIndex ':' wLength ':' data
+      {
+      }
+    | CTRL '_' IN  endpoint ':' data
+    | non_ctrl '_' direction endpoint ':' data
+    ;
 
 packet: packet_body
-        | packet_body timestamp
-        ;
+    | packet_body timestamp
+    ;
 
 %%
 
@@ -47,9 +49,29 @@ void yyerror(char *s) {
     fprintf(stderr, "%s\n", s);
 }
 
-int main(void) {
-    yylval = malloc(sizeof(urb_t));
+int main(int argc, char **argv) {
+    /* Parsing args */
+    if(argc != 3) {
+        print_help_and_exit(argv);
+    }
+    int vid, pid;
+    if(!sscanf(argv[1], "%x:%x", &vid, &pid)) {
+        ERROR("Couldn't parse vid:pid");
+    }
+
+    /* Initializations */
+    if(!freopen(argv[2], "r", stdin)) {
+        PERROR("Couldn't open file\n");
+    }
+    if(!(yylval = malloc(sizeof(urb_t)))) {
+        ERROR("Couldn't malloc");
+    }
+    //usb_init(vid, pid);
+
     yyparse();
+
+    /* Dismiss */
     free(yylval);
+    fclose(stdin);
     return 0;
 }
