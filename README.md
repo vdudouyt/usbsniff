@@ -15,7 +15,9 @@ $ usb_reset 1234:4567
 ### Format
 
 ```nohiglight
+# transfer_type:bmRequestType:bRequest:wValue:wIndex:wLength:data
 CTRL_OUT(0.0):21:01:0200:0600:0005:80b8000000
+# transfer_type:data
 BULK_OUT(0.1):80b8000000 # 0.0028590000001714
 INTR_OUT(0.0):80b8000000 # 0.0028590000001714
 ISOC_OUT(0.1):eeffffff00000000f40b00000000000 # 0.1025490000611171
