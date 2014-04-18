@@ -36,4 +36,4 @@ ISOC_IN(0.1): eeffffff00000000f40b00000000000 # 0.1025490000611171
 
 * Does usb_replay respects the timings?
 
-  It waits for a specified interval (after sharp sign) before performing each call.
+  Yes, it waits for a specified interval (which is specified in seconds after the sharp sign) before performing each call.
