@@ -32,7 +32,7 @@ ISOC_IN(0.1): eeffffff00000000f40b00000000000 # 0.1025490000611171
 
 * How does usb_replay handles the input transfers?
 
-  It fires an input request and blocks until the response received.
+  It fires an input request through libusb-1.0 which blocks until the response will be received.
 
 * Does usb_replay respects the timings?
 
