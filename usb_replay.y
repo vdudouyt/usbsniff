@@ -24,11 +24,11 @@ endpoint:       '(' FLOAT ')'
 timestamp:      '#' FLOAT
 non_ctrl:       BULK | INTR | ISOC
 
-bmRequestType:  HEX { hex_to_buf(yytext, yylval->bmRequestType); }
-bRequest:       HEX { hex_to_buf(yytext, yylval->bRequest); }
-wValue:     HEX { hex_to_buf(yytext, yylval->wValue); }
-wIndex:     HEX { hex_to_buf(yytext, yylval->wIndex); }
-wLength:    HEX { hex_to_buf(yytext, yylval->wLength); }
+bmRequestType:  HEX { yylval->bmRequestType = hex_to_int(yytext); }
+bRequest:       HEX { yylval->bRequest = hex_to_int(yytext); }
+wValue:     HEX { yylval->wValue = hex_to_int(yytext); }
+wIndex:     HEX { yylval->wIndex = hex_to_int(yytext); }
+wLength:    HEX { yylval->wLength = hex_to_int(yytext); }
 data:       HEX { hex_to_buf(yytext, yylval->data); }
 
 packet_body:
