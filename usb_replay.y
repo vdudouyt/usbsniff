@@ -39,8 +39,8 @@ packet_body:
     | non_ctrl '_' direction endpoint ':' data
     ;
 
-packet: packet_body
-    | packet_body timestamp
+packet: packet_body { yylval->timing = 0; }
+    | packet_body timestamp { sscanf(yytext, "%Lf", &(yylval->timing)); }
     ;
 
 %%

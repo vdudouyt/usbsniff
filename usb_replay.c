@@ -41,9 +41,16 @@ void print_help_and_exit(char **argv) {
 }
 
 void perform_transfer(urb_t *urb) {
-	printf("%02x:%02x:%02x:%02x:%02x\n", urb->bmRequestType, urb->bRequest, urb->wValue, urb->wIndex, urb->wLength);
 	int endpoint = urb->endpoint | (urb->direction == IN ? LIBUSB_ENDPOINT_IN : LIBUSB_ENDPOINT_OUT);
 
+	/* Take a care about timings */
+	if(urb->timing) {
+		int time = urb->timing*pow(10,6);
+		usleep(time);
+	}
+	return;
+
+	/* Trigger libusb to perform the transfer */
 	int r, bytes_transferred = 0;
 	if(urb->type == CTRL && urb->direction == OUT) {
 		r = libusb_control_transfer(dev_handle, 
@@ -79,6 +86,7 @@ void perform_transfer(urb_t *urb) {
 				0);
 	}
 
+	/* Exception handling */
 	if(r != 0) {
 		ERROR2("Transfer failed: %s\n", libusb_error_name(r));
 	}
