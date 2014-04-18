@@ -1,14 +1,18 @@
 .PHONY: all clean install
+.SUFFIXES:
+.SUFFIXES: .c .o .h
+
 EXECUTABLES=usb_capture
 OBJECTS=common.o
+USB_REPLAY_OBJECTS=y.tab.o lex.yy.o
 PROGS=usb_capture usb_detach usb_replay usb_reset
 CFLAGS = `pkg-config --cflags libusb-1.0` -g -O0 -DLINUX
-LIBS = `pkg-config --libs libusb-1.0` -lpcap
+LIBS = `pkg-config --libs libusb-1.0` -lpcap -ll -ly
 
 all: $(OBJECTS) $(PROGS)
 
 clean:
-	rm $(OBJECTS) $(PROGS)
+	rm -f $(OBJECTS) $(PROGS) lex.yy.* y.tab.*
 
 install:
 	cp $(PROGS) $(DESTDIR)/usr/bin/
@@ -19,11 +23,11 @@ usb_capture: usb_capture.c
 usb_detach: usb_detach.c
 	$(CC) $(CFLAGS) $(OBJECTS) usb_detach.c $(LIBS) -o usb_detach
 
-usb_replay: usb_replay.c
-	$(CC) $(CFLAGS) $(OBJECTS) usb_replay.c $(LIBS) -o usb_replay
+usb_replay: $(USB_REPLAY_OBJECTS) usb_replay.c
+	$(CC) $(CFLAGS) $(OBJECTS) $(USB_REPLAY_OBJECTS) usb_replay.c $(LIBS) -o usb_replay
 
-parser: usb_replay.l usb_replay.y common.o
+y.tab.c: usb_replay.y
 	bison -y -d usb_replay.y
+
+lex.yy.c: usb_replay.l
 	flex usb_replay.l
-	gcc -c y.tab.c lex.yy.c
-	gcc y.tab.o lex.yy.o common.o -o parser -ll -ly
