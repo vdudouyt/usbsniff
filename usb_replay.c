@@ -57,7 +57,6 @@ void perform_transfer(urb_t *urb) {
 					urb->data,
 					urb->data_size,
 					0);
-			exit(0);
 			break;
 		case BULK:
 			r = libusb_bulk_transfer(dev_handle,
