@@ -36,6 +36,9 @@ void print_help_and_exit(char **argv) {
 	exit(-1);
 }
 
+void continue_transfer_cb(struct libusb_transfer *ptTransfer) {
+}
+
 void perform_transfer(urb_t *urb) {
 	int direction = urb->direction == IN ? LIBUSB_ENDPOINT_IN : LIBUSB_ENDPOINT_OUT;
 
@@ -47,6 +50,7 @@ void perform_transfer(urb_t *urb) {
 
 	/* Trigger libusb to perform the transfer */
 	int r, bytes_transferred = 0;
+	struct libusb_transfer transfer;
 	switch(urb->type) {
 		case CTRL:
 			r = libusb_control_transfer(dev_handle, 
@@ -75,6 +79,19 @@ void perform_transfer(urb_t *urb) {
 					urb->data_size,
 					&bytes_transferred,
 					0);
+			ASSERT2(r == 0, TRANSFER_FAILED_MESSAGE, libusb_error_name(r));
+			break;
+		case ISOC:
+			libusb_fill_iso_transfer(&transfer,
+					dev_handle,
+					urb->endpoint,
+					urb->data,
+					urb->data_size,
+					1,
+					continue_transfer_cb,
+					NULL,
+					0);
+			libusb_submit_transfer(&transfer);
 			ASSERT2(r == 0, TRANSFER_FAILED_MESSAGE, libusb_error_name(r));
 			break;
 	}
