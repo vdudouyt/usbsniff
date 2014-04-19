@@ -57,6 +57,7 @@ void perform_transfer(urb_t *urb) {
 					urb->data,
 					urb->data_size,
 					0);
+			ASSERT2(r >= 0, TRANSFER_FAILED_MESSAGE, libusb_error_name(r));
 			break;
 		case BULK:
 			r = libusb_bulk_transfer(dev_handle,
@@ -65,6 +66,7 @@ void perform_transfer(urb_t *urb) {
 					urb->data_size,
 					&bytes_transferred,
 					0);
+			ASSERT2(r == 0, TRANSFER_FAILED_MESSAGE, libusb_error_name(r));
 			break;
 		case INTR:
 			r = libusb_interrupt_transfer(dev_handle,
@@ -73,11 +75,7 @@ void perform_transfer(urb_t *urb) {
 					urb->data_size,
 					&bytes_transferred,
 					0);
+			ASSERT2(r == 0, TRANSFER_FAILED_MESSAGE, libusb_error_name(r));
 			break;
-	}
-
-	/* Exception handling */
-	if(r != 0) {
-		ERROR2("Transfer failed: %s\n", libusb_error_name(r));
 	}
 }
