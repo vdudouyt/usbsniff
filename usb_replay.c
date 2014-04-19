@@ -37,7 +37,7 @@ void print_help_and_exit(char **argv) {
 }
 
 void perform_transfer(urb_t *urb) {
-	int endpoint = urb->endpoint | (urb->direction == IN ? LIBUSB_ENDPOINT_IN : LIBUSB_ENDPOINT_OUT);
+	int direction = urb->direction == IN ? LIBUSB_ENDPOINT_IN : LIBUSB_ENDPOINT_OUT;
 
 	/* Take a care about timings */
 	if(urb->timing) {
@@ -50,7 +50,7 @@ void perform_transfer(urb_t *urb) {
 	switch(urb->type) {
 		case CTRL:
 			r = libusb_control_transfer(dev_handle, 
-					urb->bmRequestType,
+					urb->bmRequestType | direction,
 					urb->bRequest,
 					urb->wValue,
 					urb->wIndex,
@@ -61,7 +61,7 @@ void perform_transfer(urb_t *urb) {
 			break;
 		case BULK:
 			r = libusb_bulk_transfer(dev_handle,
-					endpoint,
+					urb->endpoint | direction,
 					urb->data,
 					urb->data_size,
 					&bytes_transferred,
@@ -69,7 +69,7 @@ void perform_transfer(urb_t *urb) {
 			break;
 		case INTR:
 			r = libusb_interrupt_transfer(dev_handle,
-					endpoint,
+					urb->endpoint | direction,
 					urb->data,
 					urb->data_size,
 					&bytes_transferred,
