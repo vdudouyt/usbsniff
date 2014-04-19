@@ -1,7 +1,7 @@
 usbsniff
 =========
 
-USB reverse engineering utils (capture / replay / e.t.c.)
+Taking the reverse engineering seriously
 
 ### Synopsis
 
