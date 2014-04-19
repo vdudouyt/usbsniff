@@ -36,11 +36,10 @@ bmRequestType:  HEX { yylval->bmRequestType = hex_to_int(yytext); }
 bRequest:       HEX { yylval->bRequest = hex_to_int(yytext); }
 wValue:     HEX { yylval->wValue = hex_to_int(yytext); }
 wIndex:     HEX { yylval->wIndex = hex_to_int(yytext); }
-wLength:    HEX { yylval->wLength = hex_to_int(yytext); }
 data:       HEX { hex_to_buf(yytext, yylval->data); yylval->data_size = strlen(yytext) / 2; }
 
 packet_body:
-    | CTRL '_' direction endpoint ':' bmRequestType ':' bRequest ':' wValue ':' wIndex ':' wLength ':' data
+    | CTRL '_' direction endpoint ':' bmRequestType ':' bRequest ':' wValue ':' wIndex ':' data
       {
         yylval->type = CTRL;
       }

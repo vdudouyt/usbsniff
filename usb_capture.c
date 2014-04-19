@@ -110,12 +110,11 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 		/* Printing packet's setup */
 		if(usb_header->transfer_type == URB_CONTROL) {
 			pcap_usb_setup *setup = &(usb_header->setup);
-			OUT("%02x:%02x:%04x:%04x:%04x:",
+			OUT("%02x:%02x:%04x:%04x:",
 					setup->bmRequestType,
 					setup->bRequest,
 					setup->wValue,
-					setup->wIndex,
-					setup->wLength);
+					setup->wIndex);
 		}
 
 		/* Printing payload */
