@@ -36,3 +36,7 @@ ISOC_IN(0.1): eeffffff00000000f40b00000000000 # 0.1025490000611171
 * Does usb_replay respects the timings?
 
   Yes, it waits for a specified interval (which is specified in seconds after the sharp sign) before performing each call.
+
+* Why do I need to replug the device after running usb_replay?
+ 
+  It performs a detach_kernel_driver() call in the beginning, so in the case of your mouse, it may be looking like it's suddenly stopped working. This doesn't means that something is actually went wrong, and there is no need to replug until you'll need it interacting with your system again.
