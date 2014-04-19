@@ -40,15 +40,9 @@ wLength:    HEX { yylval->wLength = hex_to_int(yytext); }
 data:       HEX { hex_to_buf(yytext, yylval->data); yylval->data_size = strlen(yytext) / 2; }
 
 packet_body:
-    | CTRL '_' OUT endpoint ':' bmRequestType ':' bRequest ':' wValue ':' wIndex ':' wLength ':' data
+    | CTRL '_' direction endpoint ':' bmRequestType ':' bRequest ':' wValue ':' wIndex ':' wLength ':' data
       {
         yylval->type = CTRL;
-        yylval->direction = OUT;
-      }
-    | CTRL '_' IN  endpoint ':' data
-      {
-        yylval->type = CTRL;
-        yylval->direction = IN;
       }
     | non_ctrl '_' direction endpoint ':' data
     ;

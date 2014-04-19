@@ -47,38 +47,34 @@ void perform_transfer(urb_t *urb) {
 
 	/* Trigger libusb to perform the transfer */
 	int r, bytes_transferred = 0;
-	if(urb->type == CTRL && urb->direction == OUT) {
-		r = libusb_control_transfer(dev_handle, 
-				urb->bmRequestType,
-				urb->bRequest,
-				urb->wValue,
-				urb->wIndex,
-				urb->data,
-				urb->wLength,
-				0);
-	} else if(urb->type == CTRL && urb->direction == IN) {
-		r = libusb_control_transfer(dev_handle, 
-				0,
-				0,
-				0,
-				0,
-				urb->data,
-				urb->data_size,
-				0);
-	} else if(urb->type == BULK) {
-		r = libusb_bulk_transfer(dev_handle,
-				endpoint,
-				urb->data,
-				urb->data_size,
-				&bytes_transferred,
-				0);
-	} else if(urb->type == INTR) {
-		r = libusb_interrupt_transfer(dev_handle,
-				endpoint,
-				urb->data,
-				urb->data_size,
-				&bytes_transferred,
-				0);
+	switch(urb->type) {
+		case CTRL:
+			r = libusb_control_transfer(dev_handle, 
+					urb->bmRequestType,
+					urb->bRequest,
+					urb->wValue,
+					urb->wIndex,
+					urb->data,
+					urb->data_size,
+					0);
+			exit(0);
+			break;
+		case BULK:
+			r = libusb_bulk_transfer(dev_handle,
+					endpoint,
+					urb->data,
+					urb->data_size,
+					&bytes_transferred,
+					0);
+			break;
+		case INTR:
+			r = libusb_interrupt_transfer(dev_handle,
+					endpoint,
+					urb->data,
+					urb->data_size,
+					&bytes_transferred,
+					0);
+			break;
 	}
 
 	/* Exception handling */
