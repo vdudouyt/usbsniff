@@ -84,7 +84,7 @@ void perform_transfer(urb_t *urb) {
 		case ISOC:
 			libusb_fill_iso_transfer(&transfer,
 					dev_handle,
-					urb->endpoint,
+					urb->endpoint | direction,
 					urb->data,
 					urb->data_size,
 					1,
