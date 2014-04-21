@@ -25,7 +25,8 @@ void usb_init(unsigned int vid, unsigned int pid) {
 	dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
 	assert(dev_handle);
 
-	if(libusb_kernel_driver_active(dev_handle, 0) == 1) { //find out if kernel driver is attached
+	if(libusb_kernel_driver_active(dev_handle, 0) == 1) {
+		printf("Warning: the device is going to be detached from kernel driver\n");
 		int r = libusb_detach_kernel_driver(dev_handle, 0);
 		assert(r == 0);
 	}

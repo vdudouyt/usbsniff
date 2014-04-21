@@ -75,7 +75,10 @@ int main(int argc, char **argv) {
     }
     usb_init(vid, pid);
 
+    printf("Sending traffic... ");
+    fflush(stdout);
     yyparse();
+    printf("\n");
 
     /* Dismiss */
     free(yylval);
