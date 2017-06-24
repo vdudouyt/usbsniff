@@ -23,6 +23,9 @@ usb_capture: usb_capture.c
 usb_detach: usb_detach.c
 	$(CC) $(CFLAGS) $(OBJECTS) usb_detach.c $(LIBS) -o usb_detach
 
+usb_reset: usb_reset.c
+	$(CC) $(CFLAGS) $(OBJECTS) usb_reset.c $(LIBS) -o usb_reset
+
 usb_replay: $(USB_REPLAY_OBJECTS) usb_replay.c
 	$(CC) $(CFLAGS) $(OBJECTS) $(USB_REPLAY_OBJECTS) usb_replay.c $(LIBS) -o usb_replay
 

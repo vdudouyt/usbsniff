@@ -1,4 +1,4 @@
-/*  (c) Valentin Dudouyt, 2013 - 2014
+/*  (c) Valentin Dudouyt, 2013 - 2017
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
@@ -21,9 +21,13 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <libusb.h>
+#include <stdlib.h>
 
-#include <linux/usbdevice_fs.h>
-
+void print_help_and_exit(char **argv) {
+   fprintf(stderr, "Usage: %s <vid>:<pid> [<filename>]\n", argv[0]);
+   exit(-1);
+}
 
 int main(int argc, char **argv)
 {
@@ -31,26 +35,29 @@ int main(int argc, char **argv)
     int fd;
     int rc;
 
-    if (argc != 2) {
-        fprintf(stderr, "Usage: usbreset device-filename\n");
+    if (argc != 2)
+      print_help_and_exit(argv);
+
+    int result, vid, pid;
+    result = sscanf(argv[1], "%x:%x", &vid, &pid);
+
+    if(!result)
+       print_help_and_exit(argv);
+
+    libusb_init(NULL);
+    libusb_device_handle *handle = libusb_open_device_with_vid_pid(NULL, vid, pid);
+
+    if(!handle) {
+        fprintf(stderr, "Couldn't open device\n");
         return 1;
     }
-    filename = argv[1];
 
-    fd = open(filename, O_WRONLY);
-    if (fd < 0) {
-        perror("Error opening output file");
+    result = libusb_reset_device(handle);
+
+    if(!handle) {
+        fprintf(stderr, "Couldn't reset device\n");
         return 1;
     }
 
-    printf("Resetting USB device %s\n", filename);
-    rc = ioctl(fd, USBDEVFS_RESET, 0);
-    if (rc < 0) {
-        perror("Error in ioctl");
-        return 1;
-    }
-    printf("Reset successful\n");
-
-    close(fd);
     return 0;
 }
