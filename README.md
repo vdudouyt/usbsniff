@@ -44,7 +44,7 @@ ISOC_IN(0.1): eeffffff00000000f40b00000000000 # 0.1025490000611171
 ### Compilation
 Ubuntu 20.04:
 ```nohighlight
-$ sudo apt install bison flex libusb-1.0-0-dev libpcap-dev
+$ sudo apt install bison flex libusb-1.0-0-dev libpcap-dev libbison-dev
 $ make
 ```
 
