@@ -34,4 +34,8 @@ typedef struct urb_s {
 	uint16_t wLength;
 } urb_t;
 
+void usb_init(unsigned int vid, unsigned int pid);
+void perform_transfer(urb_t *urb);
+void print_help_and_exit(char **argv);
+
 #endif
