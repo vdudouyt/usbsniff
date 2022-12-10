@@ -18,6 +18,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <unistd.h>
 #include <libusb.h>
 #include "common.h"
 #include "usb_replay.h"
